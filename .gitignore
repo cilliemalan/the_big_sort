@@ -1,0 +1,5 @@
+.depend
+sort.exe
+sort
+*.gch
+*.o

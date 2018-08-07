@@ -1,5 +1,7 @@
 .depend
-sort.exe
+*.exe
 sort
+generate
+.vscode/
 *.gch
 *.o

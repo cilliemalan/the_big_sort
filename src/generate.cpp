@@ -1,3 +1,10 @@
+/*
+    See LICENSE
+
+    This utility generates random stuff.
+*/
+
+
 #include "common.hpp"
 #include "concurrentqueue.h"
 

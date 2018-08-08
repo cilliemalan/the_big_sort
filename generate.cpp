@@ -17,7 +17,6 @@ struct Word
 
 std::vector<Word> read_all_words()
 {
-    std::cerr << "organizing word buffer\n";
     std::vector<Word> result;
     const char* last_ptr = &all_words_string[0];
     int last_size = 0;
@@ -44,6 +43,7 @@ std::vector<int> generate_randoms()
     for(size_t i=0;i<randoms.size();i++)
     {
         randoms[i] = generator();
+        if(randoms[i]<0) randoms[i] = -randoms[i];
     }
 
     return randoms;
@@ -56,6 +56,11 @@ const std::vector<int> randoms(generate_randoms());
 moodycamel::ConcurrentQueue<std::vector<char>> queue;
 std::condition_variable enqueued;
 std::mutex enqueued_mx;
+
+static void capitalize(char* c)
+{
+    if ((*c > 96) && (*c < 123)) *c-=32;
+}
 
 std::vector<char> generate_buffer(int size)
 {
@@ -75,6 +80,11 @@ std::vector<char> generate_buffer(int size)
         }
 
         word.copy(&buffer[buffer_size]);
+        if((randoms[++ri%randoms.size()]%10) == 0)
+        {
+            // capitalize randomly
+            capitalize(&buffer[buffer_size]);
+        }
         buffer_size += word.length;
 
         if (--next_endl <= 0)
@@ -135,7 +145,6 @@ int main(int argc, char *argv[])
     int numThreads = std::thread::hardware_concurrency() - 2;
     if(numThreads <= 0) numThreads = 1;
 
-    std::cerr << "using " << numThreads << " threads\n";
     for(int i=0;i<numThreads;i++)
     {
         threads.emplace_back([&]() {
@@ -156,7 +165,8 @@ int main(int argc, char *argv[])
         std::vector<char> buffer;
         if(queue.try_dequeue(buffer))
         {
-            std::cerr << "writing buffer #" << (buffers_written+1) << "/" << (buffers_to_write) << "\n";
+            int progress = (100*(buffers_written))/buffers_to_write;
+            std::cerr << "\r" << progress << "%";
             std::cout.write(&buffer[0], buffer.size());
             buffers_written++;
 
@@ -168,6 +178,8 @@ int main(int argc, char *argv[])
     }
 
     for (auto &t : threads) t.join();
+
+    std::cerr << "\r100%";
 
     return 0;
 }

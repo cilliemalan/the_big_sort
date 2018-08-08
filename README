@@ -1,0 +1,19 @@
+The Big Sort
+
+
+This repo contains the source for utilities around The Big Sort dev day.
+
+
+Utility: generate
+
+generates a file with random stuff.
+
+    Usage: generate <amount in gigabytes>
+
+The program will print to stdout so run it e.g. like this:
+
+    # will generate 3Gb of random data and store in /tmp/wut.dat
+    generate 3 > /tmp/wut.dat
+
+
+(that's all for now)

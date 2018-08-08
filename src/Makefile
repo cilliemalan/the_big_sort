@@ -5,8 +5,8 @@ ALL_SRCS=$(SRCS) $(addsuffix .cpp,$(EXECUTABLES))
 PCH=common.hpp
 
 CXX?=g++
-CPPFLAGS=-g -O3 -std=c++17 -Wall
-LDFLAGS=-g -std=c++17 -Wall -lpthread
+CPPFLAGS=-g -O3 -std=c++17 -Wall -pthread
+LDFLAGS=-g -std=c++17 -Wall -lpthread -pthread
 OBJS=$(subst .cpp,.o,$(SRCS))
 ALL_OBJS=$(subst .cpp,.o,$(ALL_SRCS))
 

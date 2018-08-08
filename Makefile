@@ -1,8 +1,8 @@
 
-EXECUTABLES=sort generate
+EXECUTABLES=generate
 SRCS=words.cpp
 ALL_SRCS=$(SRCS) $(addsuffix .cpp,$(EXECUTABLES))
-PCH=sort.hpp
+PCH=common.hpp
 
 CXX?=g++
 CPPFLAGS=-g -O3 -std=c++17 -Wall
@@ -12,15 +12,10 @@ ALL_OBJS=$(subst .cpp,.o,$(ALL_SRCS))
 
 
 
-all: sort generate
+all: generate
 
 generate: $(PCH).gch $(ALL_OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $@.o
-
-sort: $(PCH).gch $(ALL_OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $@.o
-
-depend: .depend
 
 .depend: $(ALL_SRCS)
 	$(CXX) $(CPPFLAGS) -MM $^>./.depend;

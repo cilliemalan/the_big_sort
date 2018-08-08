@@ -1,4 +1,4 @@
-#include "sort.hpp"
+#include "common.hpp"
 #include "concurrentqueue.h"
 
 extern std::string all_words_string;

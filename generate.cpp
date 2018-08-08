@@ -1,13 +1,11 @@
 #include "sort.hpp"
+#include "concurrentqueue.h"
 
-const std::uint64_t memory_buffer_size = 512*1024*1024;
-const std::uint64_t to_write = 1024*1024*1024;
+extern std::string all_words_string;
 
-extern const std::string all_words_string;
-
-struct word
+struct Word
 {
-    word(const char* pointer, int length):pointer(pointer),length(length) {}
+    Word(const char* pointer, int length):pointer(pointer),length(length) {}
     inline void copy(char* buffer)
     {
         std::memcpy(buffer, pointer, length);
@@ -17,9 +15,10 @@ struct word
     int length;
 };
 
-std::vector<word> read_all_words()
+std::vector<Word> read_all_words()
 {
-    std::vector<word> result;
+    std::cerr << "organizing word buffer\n";
+    std::vector<Word> result;
     const char* last_ptr = &all_words_string[0];
     int last_size = 0;
     for(size_t i = 0; i<all_words_string.size();i++)
@@ -38,55 +37,137 @@ std::vector<word> read_all_words()
     return result;
 }
 
-int main(int argc, char *argv[])
+std::vector<int> generate_randoms()
 {
-    std::vector<word> all_words(read_all_words());
-
     std::mt19937 generator;
-    std::uint64_t total_written = 0;
-    std::vector<int> randoms(128*1024*1024);
+    std::vector<int> randoms(8*1024*1024);
     for(size_t i=0;i<randoms.size();i++)
     {
         randoms[i] = generator();
     }
 
+    return randoms;
+}
+
+const std::vector<Word> all_words;
+const std::uint64_t memory_buffer_size = 256ull*1024*1024;
+const std::uint64_t to_write = 8ull*1024*1024*1024;
+const std::vector<int> randoms(generate_randoms());
+moodycamel::ConcurrentQueue<std::vector<char>> queue;
+std::condition_variable enqueued;
+std::mutex enqueued_mx;
+
+std::vector<char> generate_buffer(int size)
+{
+    std::vector<char> buffer(size);
     int ri = 0;
-    std::vector<char> buffer(memory_buffer_size);
-    while (total_written < to_write)
+    int buffer_size = 0;
+    int next_endl = randoms[++ri%randoms.size()] % 20;
+    for (;;)
     {
-        int buffer_size = 0;
-
-        int next_endl = randoms[++ri%randoms.size()] % 20;
-        for (;;)
+        int word_ix = randoms[++ri%randoms.size()] % all_words.size();
+        auto word = all_words[word_ix];
+        auto space_left = buffer.size() - buffer_size;
+        if (space_left < static_cast<size_t>(word.length + 2))
         {
-            int word_ix = randoms[++ri%randoms.size()] % all_words.size();
-            auto word = all_words[word_ix];
-            auto space_left = buffer.size() - buffer_size;
-
-            if (space_left < static_cast<size_t>(word.length + 2))
-            {
-                buffer[buffer_size++] = '\n';
-                break;
-            }
-
-            word.copy(&buffer[buffer_size]);
-            buffer_size += word.length;
-
-            if (--next_endl == 0)
-            {
-                buffer[buffer_size++] = '\n';
-                next_endl = randoms[++ri%randoms.size()] % 20;
-            }
+            buffer[buffer_size++] = '\n';
+            break;
         }
 
-        std::cout.write(&buffer[0], buffer_size);
-        total_written += buffer_size;
+        word.copy(&buffer[buffer_size]);
+        buffer_size += word.length;
 
-        std::cerr << "\r" << ((total_written * 100) / to_write) << "%    ";
+        if (--next_endl <= 0)
+        {
+            buffer[buffer_size++] = '\n';
+            next_endl = randoms[++ri%randoms.size()] % 20;
+        }
     }
 
-    std::cout << std::endl;
-    std::cerr << "\rdone         \n";
+    buffer.resize(buffer_size);
+    return buffer;
+}
+
+void print_usage()
+{
+    std::cerr << R"(
+generates a file with random stuff.
+
+    Usage: generate <amount in gigabytes>
+
+The program will print to stdout so run it e.g. like this:
+
+    # will generate 3Gb of random data and store in /tmp/wut.dat
+    generate 3 > /tmp/wut.dat
+
+)";
+}
+
+int main(int argc, char *argv[])
+{
+    if(argc < 2)
+    {
+        print_usage();
+        return 1;
+    }
+
+    int num_gigabytes = std::atoi(argv[1]);
+    if(num_gigabytes < 1)
+    {
+        print_usage();
+        return 2;
+    }
+
+    if (num_gigabytes > 500)
+    {
+        std::cerr << "The program has a hardcoded limit of 500 gigabytes. If you want more than that you're going to have to modify the source code.";
+        return 3;
+    }
+
+
+    *const_cast<std::vector<Word>*>(&all_words) = read_all_words();
+    int buffers_to_write = static_cast<int>((1024ull*1024*1024*num_gigabytes) / memory_buffer_size);
+    int buffers_written = 0;
+    std::atomic<int> total_buffers_generated;
+    total_buffers_generated = 0;
+
+    std::vector<std::thread> threads;
+    int numThreads = std::thread::hardware_concurrency() - 2;
+    if(numThreads <= 0) numThreads = 1;
+
+    std::cerr << "using " << numThreads << " threads\n";
+    for(int i=0;i<numThreads;i++)
+    {
+        threads.emplace_back([&]() {
+            while(total_buffers_generated < buffers_to_write)
+            {
+                auto buffer = generate_buffer(memory_buffer_size);
+                
+                queue.enqueue(std::move(buffer));
+                enqueued.notify_one();
+                ++total_buffers_generated;
+            }
+        });
+    }
+
+
+    while(buffers_written < buffers_to_write)
+    {
+        std::vector<char> buffer;
+        if(queue.try_dequeue(buffer))
+        {
+            std::cerr << "writing buffer #" << (buffers_written+1) << "/" << (buffers_to_write) << "\n";
+            std::cout.write(&buffer[0], buffer.size());
+            buffers_written++;
+
+            continue;
+        }
+
+        std::unique_lock<std::mutex> lock(enqueued_mx);
+        enqueued.wait(lock);
+    }
+
+    for (auto &t : threads) t.join();
 
     return 0;
 }

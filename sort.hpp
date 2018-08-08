@@ -8,6 +8,11 @@
 #include <iterator>
 #include <numeric>
 #include <cstring>
+#include <atomic>
+#include <condition_variable>
+#include <thread>
+#include <mutex>
+
 
 #if defined(unix) || defined(__unix__) || defined(__unix)
 #ifndef __unix__

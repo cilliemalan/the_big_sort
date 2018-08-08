@@ -19,3 +19,13 @@
 #define __unix__
 #endif
 #endif
+
+#if defined(_WIN64) || defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__)
+#ifndef WIN32
+#define WIN32
+
+#include <stdio.h>  
+#include <fcntl.h>  
+#include <io.h>  
+#endif
+#endif

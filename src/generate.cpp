@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
     for (auto &t : threads)
         t.join();
 
-    std::cerr << "\r100%";
+    std::cerr << "\r100%\n";
     std::cerr << "wrote " << total_bytes_written << " bytes.\n";
 
     fclose (stdout);

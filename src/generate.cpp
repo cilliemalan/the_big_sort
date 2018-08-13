@@ -157,24 +157,16 @@ int main(int argc, char *argv[])
     int numThreads = std::thread::hardware_concurrency() - 2;
     if (numThreads <= 0) numThreads = 1;
 
-    std::cerr << "need to generate " << buffers_to_write << " buffers\n";
-
     for (int i = 0; i < numThreads; i++)
     {
         threads.emplace_back([&]() {
             while (++total_buffers_generated <= buffers_to_write)
             {
-                std::cerr << "#!!!generating!!!\n";
                 auto buffer = generate_buffer(memory_buffer_size);
 
-                std::cerr << "#lock   (p)\n";
                 std::unique_lock<std::mutex> lock(enqueued_mx);
-                std::cerr << "#locked (p)\n";
                 queue.enqueue(std::move(buffer));
-                std::cerr << "#lockenqueued\n";
                 enqueued.notify_one();
-                std::cerr << "#notified\n";
-                std::cerr << "#unlock (p)\n";
             }
         });
     }
@@ -190,18 +182,13 @@ int main(int argc, char *argv[])
 
     while (buffers_written < buffers_to_write)
     {
-        std::cerr << "lock   (c)\n";
         std::unique_lock<std::mutex> lock(enqueued_mx);
-        std::cerr << "locked (c)\n";
         std::vector<char> buffer;
         if (queue.try_dequeue(buffer))
         {
-            std::cerr << "unlock (c1)\n";
             lock.unlock();
             int progress = (100 * (buffers_written)) / buffers_to_write;
             std::cerr << "\r" << progress << "%";
-            std::cerr << "buffer: " << reinterpret_cast<uint64_t>(&buffer[0]) << "\n";
-            std::cerr << "size: " << buffer.size() << "\n";
 
             // write
             fwrite(&buffer[0], 1, buffer.size(), stdout);
@@ -214,9 +201,7 @@ int main(int argc, char *argv[])
 
         if(buffers_written < buffers_to_write)
         {
-            std::cerr << "wait\n";
             enqueued.wait(lock);
-            std::cerr << "unlock (wait)\n";
         }
     }
 
@@ -224,7 +209,7 @@ int main(int argc, char *argv[])
         t.join();
 
     std::cerr << "\r100%";
-    std::cerr << "wrote " << buffers_written << "buffers and " << total_bytes_written << " bytes.\n";
+    std::cerr << "wrote " << total_bytes_written << " bytes.\n";
 
     fclose (stdout);
     return 0;

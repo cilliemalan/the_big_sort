@@ -22,6 +22,7 @@ mapped_file::mapped_file(std::string filename, bool readonly)
     // get its size
     DWORD hi_size, lo_size;
     lo_size = GetFileSize(file_handle, &hi_size);
+    filesize = static_cast<size_t>(lo_size) | (static_cast<size_t>(hi_size) << 32);
 
     // map it
     mapping_handle = CreateFileMapping(
@@ -43,7 +44,7 @@ mapped_file::mapped_file(std::string filename, bool readonly)
         mapping_handle,
         readonly ? FILE_MAP_READ : FILE_MAP_WRITE,
         0, 0,
-        static_cast<size_t>(lo_size) | (static_cast<size_t>(hi_size) << 32)));
+        filesize));
 
     if (!pointer)
     {

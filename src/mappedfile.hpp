@@ -6,10 +6,12 @@ class mapped_file
     mapped_file(std::string filename, bool readonly = true);
     ~mapped_file();
 
-    char &operator[](size_t pos) { return *(pointer + pos); }
-    const char &operator[](size_t pos) const { return *(pointer + pos); }
+    inline char &operator[](size_t pos) { return *(pointer + pos); }
+    inline const char &operator[](size_t pos) const { return *(pointer + pos); }
+    inline std::uint64_t size() const { return filesize; }
   private:
     char *pointer;
+    std::uint64_t filesize;
 #if defined(__unix__)
     FILE fd;
 #elif defined(WIN32)

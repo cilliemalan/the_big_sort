@@ -12,10 +12,10 @@ static void print_usage()
     std::cerr << R"(
 checks if a file is sorted.
 
-    Usage: check-sorted <unsorted file> <sorted file>
+    Usage: check-sorted <sorted file> [unsorted file]
 
-The program will print status to stderr and return 0 if the file is stable sorted. The
-unsorted file is needed in order to check if the sort was stable.
+The program will print status to stderr and return 0 if the file is sorted. If the unsorted
+file is provided, the sorted file will be checked for stability as well.
 
 )";
 }

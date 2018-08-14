@@ -1,5 +1,5 @@
 
-EXECUTABLES=generate
+EXECUTABLES=generate check-sorted
 SRCS=words.cpp mappedfile.cpp
 ALL_SRCS=$(SRCS) $(addsuffix .cpp,$(EXECUTABLES))
 PCH=common.hpp
@@ -12,9 +12,12 @@ ALL_OBJS=$(subst .cpp,.o,$(ALL_SRCS))
 
 
 
-all: generate
+all: generate check-sorted
 
 generate: $(PCH).gch $(ALL_OBJS)
+	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $@.o
+
+check-sorted: $(PCH).gch $(ALL_OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $@.o
 
 .depend: $(ALL_SRCS)

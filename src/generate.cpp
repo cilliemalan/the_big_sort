@@ -8,8 +8,24 @@
 #include "common.hpp"
 #include "blockingconcurrentqueue.h"
 
+// the amount of memory for the buffer used to generate 
+// random sequences. Will have num processors * 2 - 2
+// of these hanging around
+static const std::uint64_t memory_buffer_size = 32ull * 1024 * 1024;
+
+// the number of random numbers to generate
+static const int random_number_count = 1 * 1024 * 1024;
+
+// the maximum length of a line (in words)
+static const int max_line_length = 30;
+
+// the probability of capitalizing a word (p = 1/capitalization_coefficient)
+static const int capitalization_coefficient = 10;
+
+// this string contains a bajillion different words
 extern std::string all_words_string;
 
+// a helper class for a word which points to a a place in all_words_string.
 struct Word
 {
     Word(const char *pointer, int length) : pointer(pointer), length(length) {}
@@ -22,6 +38,7 @@ struct Word
     int length;
 };
 
+// turn all_words_string into pointers to the discrete words.
 static std::vector<Word> read_all_words()
 {
     std::vector<Word> result;
@@ -44,10 +61,12 @@ static std::vector<Word> read_all_words()
     return result;
 }
 
+// generates a sequence of random numbers. A small amount of random
+// numbers (like 8 million) are generated and iterated through.
 static std::vector<int> generate_randoms()
 {
     std::mt19937 generator;
-    std::vector<int> randoms(8 * 1024 * 1024);
+    std::vector<int> randoms(random_number_count);
     for (size_t i = 0; i < randoms.size(); i++)
     {
         randoms[i] = generator();
@@ -58,10 +77,8 @@ static std::vector<int> generate_randoms()
     return randoms;
 }
 
+// the buffer containing all words.
 static const std::vector<Word> all_words;
-static const std::uint64_t memory_buffer_size = 32ull * 1024 * 1024;
-static const std::vector<int> randoms(generate_randoms());
-static std::mt19937 rnd_seeder;
 
 static void capitalize(char *c)
 {
@@ -69,15 +86,37 @@ static void capitalize(char *c)
         *c -= 32;
 }
 
+
+// random number generating stuff.
+static std::mt19937 rnd_seeder;
+// the buffer of random numbers.
+static const std::vector<int> randoms(generate_randoms());
+static thread_local int rnd_ri = 0;
+static thread_local int rnd_cnt = 0;
+static thread_local int rnd_mod = 0;
+static int rnd(int max)
+{
+    if(--rnd_cnt <= 0)
+    {
+        // reseed
+        rnd_ri = rnd_seeder();
+        rnd_mod = rnd_seeder();
+        rnd_cnt = random_number_count;
+    }
+
+    int r = ((randoms[++rnd_ri % randoms.size()] ^ rnd_mod) % (max));
+    if (r < 0) r = -r;
+    return r;
+}
+
 static std::vector<char> generate_buffer(int size)
 {
     std::vector<char> buffer(size);
-    int ri = rnd_seeder();
     int buffer_size = 0;
-    int next_endl = randoms[++ri % randoms.size()] % 20;
+    int next_endl = rnd(max_line_length);
     for (;;)
     {
-        int word_ix = randoms[++ri % randoms.size()] % all_words.size();
+        int word_ix = rnd(all_words.size());
         auto word = all_words[word_ix];
         auto space_left = buffer.size() - buffer_size;
         if (space_left < static_cast<size_t>(word.length + 2))
@@ -87,7 +126,7 @@ static std::vector<char> generate_buffer(int size)
         }
 
         word.copy(&buffer[buffer_size]);
-        if ((randoms[++ri % randoms.size()] % 10) == 0)
+        if (rnd(capitalization_coefficient) == 0)
         {
             // capitalize randomly
             capitalize(&buffer[buffer_size]);
@@ -97,7 +136,7 @@ static std::vector<char> generate_buffer(int size)
         if (--next_endl <= 0)
         {
             buffer[buffer_size++] = '\n';
-            next_endl = randoms[++ri % randoms.size()] % 20;
+            next_endl = rnd(max_line_length);
         }
     }
 
@@ -114,10 +153,16 @@ generates a file with random stuff.
 
 The program will print to stdout so run it e.g. like this:
 
-    # will generate 3Gb of random data and store in /tmp/wut.dat
+    # will generate ~3Gb of random data and store in /tmp/wut.dat
     generate 3 > /tmp/wut.dat
 
 )";
+}
+
+void write_progress(int n, int total)
+{
+    int progress = (100 * n) / total;
+    std::cerr << "\r" << progress << "%";
 }
 
 int main(int argc, char *argv[])
@@ -140,6 +185,9 @@ int main(int argc, char *argv[])
         std::cerr << "The program has a hardcoded limit of 500 gigabytes. If you want more than that you're going to have to modify the source code.";
         return 3;
     }
+
+    // on first call the randmo number generator will reseed.
+    rnd(1);
 
     *const_cast<std::vector<Word> *>(&all_words) = read_all_words();
     int buffers_to_write = static_cast<int>((1024ull * 1024 * 1024 * num_gigabytes) / memory_buffer_size);
@@ -171,7 +219,6 @@ int main(int argc, char *argv[])
             {
                 semaphore.wait();
                 auto buffer = generate_buffer(memory_buffer_size);
-
                 queue.enqueue(std::move(buffer));
                 semaphore.signal();
             }
@@ -191,17 +238,19 @@ int main(int argc, char *argv[])
 
     while (buffers_written < buffers_to_write)
     {
+        // get the generated buffer
         std::vector<char> buffer;
         queue.wait_dequeue(buffer);
-        
-        int progress = (100 * (buffers_written)) / buffers_to_write;
-        std::cerr << "\r" << progress << "%";
 
+        // interim progress
+        write_progress((buffers_written*2) + 1, buffers_to_write * 2);
+        
         // write
         fwrite(&buffer[0], 1, buffer.size(), stdout);
         fflush (stdout);
 
         buffers_written++;
+        write_progress(buffers_written, buffers_to_write);
         total_bytes_written += buffer.size();
         continue;
     }
@@ -209,8 +258,7 @@ int main(int argc, char *argv[])
     for (auto &t : threads)
         t.join();
 
-    std::cerr << "\r100%\n";
-    std::cerr << "wrote " << total_bytes_written << " bytes.\n";
+    std::cerr << "\nwrote " << total_bytes_written << " bytes.\n";
 
     fclose (stdout);
     return 0;

@@ -6,7 +6,7 @@
 
 
 #include "common.hpp"
-#include "concurrentqueue.h"
+#include "blockingconcurrentqueue.h"
 
 extern std::string all_words_string;
 
@@ -59,11 +59,8 @@ static std::vector<int> generate_randoms()
 }
 
 static const std::vector<Word> all_words;
-static const std::uint64_t memory_buffer_size = 256ull * 1024 * 1024;
+static const std::uint64_t memory_buffer_size = 32ull * 1024 * 1024;
 static const std::vector<int> randoms(generate_randoms());
-static moodycamel::ConcurrentQueue<std::vector<char>> queue;
-static std::condition_variable enqueued;
-static std::mutex enqueued_mx;
 static std::mt19937 rnd_seeder;
 
 static void capitalize(char *c)
@@ -153,20 +150,30 @@ int main(int argc, char *argv[])
     total_buffers_generated = 0;
     std::uint64_t total_bytes_written = 0;
 
-    std::vector<std::thread> threads;
+    // using almost all the threads to generate random sequences.
     int numThreads = std::thread::hardware_concurrency() - 2;
     if (numThreads <= 0) numThreads = 1;
+    
+    // borrowing moodycamel's cross platform semaphore.
+    // we can generate max numThreads * 2 buffers before we have to wait
+    // for them to be written to disk
+    moodycamel::details::mpmc_sema::Semaphore semaphore(numThreads * 2);
 
+    // the queue of generated buffers to be written to disk
+    moodycamel::BlockingConcurrentQueue<std::vector<char>> queue;
+
+    // kick off the generating threads
+    std::vector<std::thread> threads;
     for (int i = 0; i < numThreads; i++)
     {
         threads.emplace_back([&]() {
             while (++total_buffers_generated <= buffers_to_write)
             {
+                semaphore.wait();
                 auto buffer = generate_buffer(memory_buffer_size);
 
-                std::unique_lock<std::mutex> lock(enqueued_mx);
                 queue.enqueue(std::move(buffer));
-                enqueued.notify_one();
+                semaphore.signal();
             }
         });
     }
@@ -177,32 +184,26 @@ int main(int argc, char *argv[])
     setvbuf(stdout, &line_buffer[0], _IOFBF, line_buffer.size());
 
 #ifdef WIN32
+    // windows is really pesky when it comes to newline conversion, so we need to
+    // manually switch to binary mode.
     _setmode(_fileno(stdout), _O_BINARY);
 #endif
 
     while (buffers_written < buffers_to_write)
     {
-        std::unique_lock<std::mutex> lock(enqueued_mx);
         std::vector<char> buffer;
-        if (queue.try_dequeue(buffer))
-        {
-            lock.unlock();
-            int progress = (100 * (buffers_written)) / buffers_to_write;
-            std::cerr << "\r" << progress << "%";
+        queue.wait_dequeue(buffer);
+        
+        int progress = (100 * (buffers_written)) / buffers_to_write;
+        std::cerr << "\r" << progress << "%";
 
-            // write
-            fwrite(&buffer[0], 1, buffer.size(), stdout);
-            fflush (stdout);
+        // write
+        fwrite(&buffer[0], 1, buffer.size(), stdout);
+        fflush (stdout);
 
-            buffers_written++;
-            total_bytes_written += buffer.size();
-            continue;
-        }
-
-        if(buffers_written < buffers_to_write)
-        {
-            enqueued.wait(lock);
-        }
+        buffers_written++;
+        total_bytes_written += buffer.size();
+        continue;
     }
 
     for (auto &t : threads)

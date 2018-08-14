@@ -14,7 +14,7 @@
 static const std::uint64_t memory_buffer_size = 32ull * 1024 * 1024;
 
 // the number of random numbers to generate
-static const int random_number_count = 1 * 1024 * 1024;
+static const int random_number_count = 8 * 1024 * 1024;
 
 // the maximum length of a line (in words)
 static const int max_line_length = 30;

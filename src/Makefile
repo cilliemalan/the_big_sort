@@ -1,6 +1,6 @@
 
 EXECUTABLES=generate
-SRCS=words.cpp
+SRCS=words.cpp mappedfile.cpp
 ALL_SRCS=$(SRCS) $(addsuffix .cpp,$(EXECUTABLES))
 PCH=common.hpp
 

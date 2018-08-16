@@ -27,7 +27,7 @@ std::string make_string(const char *pl0, int cl0)
     return s;
 }
 
-inline is_uppercase(char c) { return c >= 65 && c <= 90; }
+inline bool is_uppercase(char c) { return c >= 65 && c <= 90; }
 
 inline bool compare(const char *pl0, int cl0, const char *pl1, int cl1)
 {

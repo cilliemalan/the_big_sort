@@ -1,0 +1,6 @@
+Here is an example sort program. The program you build may be different entirely, but it
+will be called the same as this one. See the top-level readme for more information.
+
+To build the example, run:
+
+    docker build -t <username>/<your_thing> .

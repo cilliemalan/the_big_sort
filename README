@@ -1,12 +1,47 @@
-The Big Sort
+!!!The Big Sort!!!
+
+This repo contains information, the source for utilities and an example for The Big Sort dev day.
 
 
-This repo contains the source for utilities around The Big Sort dev day.
+
+==WHAT YOU NEED TO MAKE==
+
+For The Big Sort dev portion you need to write a program that sorts a file. The file will
+be plaintext with many many lines of text. You will need to produce a file where each
+line of text is alphanumerically greater than the line before it. The sort must be
+case-insensitive.
+
+Furthermore, the program you write will need to be containerized with docker. (Remember that
+a docker container runs like an executable). When your container is run, the paths for
+the source and destination dirs will be mounted, and your program will be executed with
+the name of the source and destination file.
+
+For example, your container will be invoked like so:
+
+    docker pull <your/image>
+    docker run --network none --ipc none --rm --pid sorter \
+        --storage-opt size=1g --read-only \
+        -v /src:/src:ro \
+        -v /dst:/dst \
+        <your/image> \
+        /src/file.dat \
+        /dst/file.dat
+
+The time it takes for your program to run will be recorded. Once the program is done, the
+destination file will be checked. If the file is sorted, the sort will be considered
+successful.
+
+Note: Inside your container everything will be read only except the destination directory.
+
+Note: to see the actual command used to run the container, see run-sort.sh.
 
 
-Utility: generate
 
-generates a file with random stuff.
+==UTILITIES==
+
+UTILITY: generate
+
+Generates a file with random stuff.
 
     Usage: generate <amount in gigabytes>
 
@@ -16,4 +51,26 @@ The program will print to stdout so run it e.g. like this:
     generate 3 > /tmp/wut.dat
 
 
-(that's all for now)
+
+UTILITY: check-sorted
+
+checks if a file is sorted.
+
+    Usage: check-sorted <sorted file> [unsorted file]
+
+The program will print status to stderr and return 0 if the file is sorted. If the unsorted
+file is provided, the sorted file will be checked for stability as well.
+
+
+UTILITY: purger
+
+purges all freeable memory.
+
+    Usage: purger
+
+Used to make sure the OS hasn't cached a file in memory, giving
+unpredictable results for a sort.
+
+
+
+==EXAMPLE==

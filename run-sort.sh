@@ -17,6 +17,8 @@ docker pull $IMAGE
 # remove the sorted file
 rm -f /dst/file.dat
 
+# purge
+purger
 
 torun="docker run
     --network none

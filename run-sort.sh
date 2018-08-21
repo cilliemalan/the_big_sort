@@ -17,9 +17,15 @@ docker pull $IMAGE
 # remove the sorted file
 rm -f /dst/file.dat
 
+# generate the file to be sorter
+rm -f /src/file.dat /dst/file.dat
+echo "Generating $GIGABYTES GB file"
+generate $GIGABYTES > /src/file.dat
+
 # purge
 purger
 
+# the command that will be run
 torun="docker run
     --network none
     --rm -it
@@ -29,10 +35,6 @@ torun="docker run
     $IMAGE
     /src/file.dat
     /dst/file.dat"
-
-rm -f /src/file.dat /dst/file.dat
-echo "Generating $GIGABYTES GB file"
-generate $GIGABYTES > /src/file.dat
 
 echo
 echo "==SORTING=="
@@ -63,3 +65,4 @@ then
 else
     echo "!!!!SORT FAILED!!!!"
 fi
+

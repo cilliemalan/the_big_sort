@@ -30,6 +30,10 @@ Note: Inside your container everything will be read only except the destination 
 Note: to see the actual command used to run the container, see run-sort.sh.
 
 ==UTILITIES==
+To build and install the utilities, run this in the src directory:
+
+    make
+    sudo make install
 
 UTILITY: generate
 
@@ -48,10 +52,9 @@ UTILITY: check-sorted
 
 checks if a file is sorted.
 
-    Usage: check-sorted <sorted file> [unsorted file]
+    Usage: check-sorted <sorted file>
 
-The program will print status to stderr and return 0 if the file is sorted. If the unsorted
-file is provided, the sorted file will be checked for stability as well.
+The program will print status to stderr and return 0 if the file is sorted.
 
 
 UTILITY: purger
@@ -61,8 +64,44 @@ purges all freeable memory.
     Usage: purger
 
 Used to make sure the OS hasn't cached a file in memory, giving
-unpredictable results for a sort.
+unpredictable results for a sort. This program crashes on Linux. Too bad.
 
 
 
 ==EXAMPLE==
+
+In the directory example you'll find an example docker image. It uses sort(1) to sort the
+file. You can use it as an example of how your dockerfile should be run. If you run your
+dockerfile in the same way as the example your program should be runnable
+using run-sort.sh.
+
+How to build:
+Execute this in the example directory:
+
+    docker build -t sortexample .
+
+How to run:
+For example, to sort 1 gb, run this:
+
+    mkdir -p /tmp/src /tmp/dst
+    generate 1 > /tmp/src/file.dat
+    time docker run -it \
+        -v /tmp/src:/src:ro -v /tmp/dst:/dst \
+        sortexample \
+        /src/file.dat \
+        /dst/file.dat
+
+The output should be:
+
+    sort -f -o /dst/file.dat /src/file.dat
+    done
+
+    real    0m15.008s
+    user    0m0.008s
+    sys     0m0.008s
+
+Here we see the file was sorted in 15 seconds.
+
+Note: your results will be skewed if /tmp has tmpfs mounted
+
+<EOF>

@@ -23,6 +23,7 @@ purger
 torun="docker run
     --network none
     --rm -it
+    -m 50g
     -v /src:/src:ro
     -v /dst:/dst
     $IMAGE

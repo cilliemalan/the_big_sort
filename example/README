@@ -31,4 +31,12 @@ Here we see the file was sorted in 15 seconds.
 
 Note: your results will be skewed if /tmp has tmpfs mounted
 
+
+== CHECKING IF YOUR RESULTS WILL BE ACCEPTED ==
+to check if a file is sorted acceptably, run this:
+
+   ./check-sorted.sh <the file>
+
+It will spit out SORTED or NOT SORTED.
+
 <EOF>

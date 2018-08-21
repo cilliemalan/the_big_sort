@@ -24,6 +24,9 @@ purger: $(PCH).gch $(ALL_OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $@.o
 
 
+install: all
+	cp $(EXECUTABLES) /usr/bin/
+
 .depend: $(ALL_SRCS)
 	$(CXX) $(CPPFLAGS) -MM $^>./.depend;
 

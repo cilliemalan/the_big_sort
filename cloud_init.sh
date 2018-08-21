@@ -21,8 +21,7 @@ cd /tmp/build
 git clone https://github.com/cilliemalan/the_big_sort
 cd the_big_sort/src
 make
-
-cp generate /usr/bin/
+make install
 
 cd /
 rm -rf /tmp/build
@@ -39,7 +38,7 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${drive}
   n # new partition
   p # primary partition
   1 # partition number 1
-    # default - start at beginning of disk 
+    # default - start at beginning of disk
     # default - use whole disk
   w # write the partition table
   q # quit just in case

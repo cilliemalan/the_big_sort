@@ -17,14 +17,17 @@ int main(int, char **)
             for (;;)
             {
                 auto block = new elem_t[increment];
-                for (size_t i = 0; i < increment; i++)
-                    block[i] = 0;
-                blocks.push_back(block);
+                if (!block) break;
                 total += increment * sizeof(elem_t);
                 if ((total % gigabyte) == 0)
                 {
-                    cout << "\rpurged " << (total / gigabyte) << " gigabytes of memory";
+                    cout << "\rpurged " << (total / gigabyte) << " gigabytes of memory" << std::flush;
                 }
+                for (size_t i = 0; i < increment; i++)
+                {
+                    block[i] = 0;
+                }
+                blocks.push_back(block);
             }
         }
         catch (...)
@@ -32,5 +35,6 @@ int main(int, char **)
         }
     }
 
-    cout << "\rpurged " << (total / gigabyte) << " gigabytes of memory\n";
+    cout << "\n\n";
+    return 0;
 }

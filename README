@@ -16,16 +16,10 @@ a docker container runs like an executable). When your container is run, the pat
 the source and destination dirs will be mounted, and your program will be executed with
 the name of the source and destination file.
 
-For example, your container will be invoked like so:
+For example, your container will be invoked (kind of) like so:
 
     docker pull <your/image>
-    docker run --network none --ipc none --rm --pid sorter \
-        --storage-opt size=1g --read-only \
-        -v /src:/src:ro \
-        -v /dst:/dst \
-        <your/image> \
-        /src/file.dat \
-        /dst/file.dat
+    docker run -it -v /src:/src:ro -v /dst:/dst <your/image> /src/file.dat /dst/file.dat
 
 The time it takes for your program to run will be recorded. Once the program is done, the
 destination file will be checked. If the file is sorted, the sort will be considered
@@ -34,8 +28,6 @@ successful.
 Note: Inside your container everything will be read only except the destination directory.
 
 Note: to see the actual command used to run the container, see run-sort.sh.
-
-
 
 ==UTILITIES==
 

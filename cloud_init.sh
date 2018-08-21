@@ -3,7 +3,7 @@
 
 # make /tmp be a ram filesystem
 cat <<EOF >> /etc/fstab
-tmpfs   /tmp       tmpfs   defaults,noatime,mode=1777,size=1g    0  0
+tmpfs   /tmp       tmpfs   defaults,noatime,mode=1777,size=10g    0  0
 tmpfs   /var/spool tmpfs   defaults,noatime,mode=1777,size=10m   0  0
 tmpfs   /var/tmp   tmpfs   defaults,noatime,mode=1777,size=10m   0  0
 EOF
@@ -12,7 +12,6 @@ mount -a
 
 # we're going to need some deps
 apt update
-apt dist-upgrade -y
 apt install -y docker.io build-essential
 
 mkdir -p /tmp/build
@@ -39,7 +38,7 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${drive}
   p # primary partition
   1 # partition number 1
     # default - start at beginning of disk
-    # default - use whole disk
+  +215G  # default - use whole disk
   w # write the partition table
   q # quit just in case
 EOF

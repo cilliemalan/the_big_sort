@@ -39,7 +39,7 @@ echo
 echo $torun
 exectime=$({ time $torun 2>&1; } 3>&2 2>&1 1>&3)
 echo
-echo "===SORT DONE==="
+echo "===SORT DONE in $exectime seconds==="
 echo
 
 if [[ "$?" -eq "0" ]]

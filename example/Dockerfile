@@ -1,4 +1,4 @@
-FROM alpine
+FROM ubuntu
 
 COPY src/sort.sh /sort.sh
 

@@ -1,6 +1,34 @@
-Here is an example sort program. The program you build may be different entirely, but it
-will be called the same as this one. See the top-level readme for more information.
+Here is an example sort program. It uses sort(1) to sort the
+file. You can use it as an example of how your dockerfile should be built. Your dockerfile
+will be run much like this example when it is benchmarked.
 
-To build the example, run:
+How to build:
+Execute this in the example directory:
 
-    docker build -t <username>/<your_thing> .
+    docker build -t sortexample .
+
+How to run:
+For example, to sort 1 gb, run this:
+
+    mkdir -p /tmp/src /tmp/dst
+    generate 1 > /tmp/src/file.dat
+    time docker run -it \
+        -v /tmp/src:/src:ro -v /tmp/dst:/dst \
+        sortexample \
+        /src/file.dat \
+        /dst/file.dat
+
+The output should be:
+
+    sort -f -o /dst/file.dat /src/file.dat
+    done
+
+    real    0m15.008s
+    user    0m0.008s
+    sys     0m0.008s
+
+Here we see the file was sorted in 15 seconds.
+
+Note: your results will be skewed if /tmp has tmpfs mounted
+
+<EOF>

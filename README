@@ -71,9 +71,8 @@ unpredictable results for a sort. This program crashes on Linux. Too bad.
 ==EXAMPLE==
 
 In the directory example you'll find an example docker image. It uses sort(1) to sort the
-file. You can use it as an example of how your dockerfile should be run. If you run your
-dockerfile in the same way as the example your program should be runnable
-using run-sort.sh.
+file. You can use it as an example of how your dockerfile should be built. Your dockerfile
+will be run much like this example when it is benchmarked.
 
 How to build:
 Execute this in the example directory:

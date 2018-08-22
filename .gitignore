@@ -5,3 +5,10 @@ generate
 .vscode/
 *.gch
 *.o
+x64/
+Debug/
+Release/
+*.dat
+*.txt
+*.psess
+*.user

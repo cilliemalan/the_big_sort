@@ -162,7 +162,10 @@ int main(int argc, char *argv[])
         // the files have to be  the same length
         if (fsorted.size() != funsorted.size())
         {
-            cerr << "The sorted and unsorted files are not equal in size\n" << "\n\n"
+            cerr << "The sorted and unsorted files are not equal in size\n"
+                << string(argv[1]) << " is " << fsorted.size() << " bytes\n"
+                << string(argv[2]) << " is " << funsorted.size() << " bytes\n"
+                << "\n\n"
                 << "NOT SORTED\n";
             return 1;
         }

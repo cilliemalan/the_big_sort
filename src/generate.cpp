@@ -116,7 +116,7 @@ static std::vector<char> generate_buffer(int size)
     int next_endl = rnd(max_line_length);
     for (;;)
     {
-        int word_ix = rnd(all_words.size());
+        int word_ix = rnd(static_cast<int>(all_words.size()));
         auto word = all_words[word_ix];
         auto space_left = buffer.size() - buffer_size;
         if (space_left < static_cast<size_t>(word.length + 2))

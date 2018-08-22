@@ -8,20 +8,19 @@ CXX?=g++
 CPPFLAGS=-g -O3 -std=c++17 -Wall -pthread
 LDFLAGS=-g -std=c++17 -Wall -lpthread -pthread
 OBJS=$(subst .cpp,.o,$(SRCS))
-ALL_OBJS=$(subst .cpp,.o,$(ALL_SRCS))
 
 
 
 all: generate check-sorted purger
 
-generate: $(PCH).gch $(ALL_OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $@.o
+generate: $(PCH).gch words.o
+	$(CXX) $(LDFLAGS) -o $@ words.o $@.o
 
-check-sorted: $(PCH).gch $(ALL_OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $@.o
+check-sorted: $(PCH).gch mappedfile.o
+	$(CXX) $(LDFLAGS) -o $@ mappedfile.o $@.o
 
-purger: $(PCH).gch $(ALL_OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $@.o
+purger: $(PCH).gch
+	$(CXX) $(LDFLAGS) -o $@ $@.o
 
 
 install: all

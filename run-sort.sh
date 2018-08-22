@@ -2,6 +2,9 @@
 # This script runs the sort and records the times. Run like so:
 #
 #   ./run-sort.sh  <your image name>
+#
+# Expectations: This script expects /src and /dst to exist, docker to be installed
+# and the executables in this repo to be installed.
 
 IMAGE=$1
 GIGABYTES=$2
@@ -48,7 +51,7 @@ echo
 if [[ "$?" -eq "0" ]]
 then
     echo "CHECKING IF THE FILE IS SORTED"
-    ./check-sorted.sh /dst/file.dat
+    check-sorted /dst/file.dat
 
     if [[ "$?" -eq "0" ]]
     then

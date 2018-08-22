@@ -12,6 +12,7 @@
 #include <condition_variable>
 #include <thread>
 #include <mutex>
+#include <unordered_set>
 
 
 #if defined(unix) || defined(__unix__) || defined(__unix)

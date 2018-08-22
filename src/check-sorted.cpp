@@ -6,7 +6,6 @@
 
 #include "common.hpp"
 #include "mappedfile.hpp"
-#include "check-sorted.h"
 
 static void print_usage()
 {
@@ -71,25 +70,64 @@ static inline void scan_for_newline(uint64_t &index, const uint64_t &file_size, 
     }
 }
 
-static inline void newline_found(uint64_t &line_p, uint64_t &line_c, uint64_t &line_p_len, const uint64_t &index, uint64_t &line_cnt)
+uint64_t last_progress = 1000;
+static inline void progress(uint64_t x, uint64_t total)
 {
-    line_p = line_c;
-    line_p_len = index - line_p;
-    line_c = index + 1;
-    line_cnt++;
+    if (x > total) x = total;
+    auto nx = x * 100;
+    auto prog = nx / total;
+    if (last_progress != prog)
+    {
+        last_progress = prog;
+        std::cerr << "\r" << prog << "%" << std::flush;
+
+        if (prog >= 100)
+        {
+            std::cerr << "\n";
+        }
+        else
+        {
+            std::cerr << std::flush;
+        }
+    }
+}
+
+static std::vector<int> generate_randoms()
+{
+    std::mt19937 generator;
+    std::vector<int> randoms(1000000);
+    for (size_t i = 0; i < randoms.size(); i++)
+    {
+        randoms[i] = generator();
+        if (randoms[i] < 0)
+            randoms[i] = -randoms[i];
+    }
+
+    return randoms;
 }
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2)
+    if (argc < 3)
     {
         print_usage();
+        return 1;
     }
 
     try
     {
         // memory map the file to check
         mapped_file fsorted(argv[1]);
+        mapped_file funsorted(argv[2]);
+
+        // the files have to be  the same length
+        if (fsorted.size() != funsorted.size())
+        {
+            std::cerr << "The sorted and unsorted files are not equal in size\n" << "\n\n"
+                << "NOT SORTED\n";
+            return 1;
+        }
+
         std::uint64_t lines = 0;
         std::uint64_t line_n0 = 0;
         std::uint64_t line_n1 = 0;
@@ -99,6 +137,8 @@ int main(int argc, char *argv[])
         std::uint64_t line_p = 0;
         std::uint64_t line_c = 0;
         std::uint64_t line_cnt = 0;
+        std::vector<int> randoms(generate_randoms());
+        std::uint64_t rix = 0;
 
         // skip blank lines at start of file
         for (; index < file_size; index++)
@@ -135,12 +175,14 @@ int main(int argc, char *argv[])
             return 0;
         }
 
+        std::cerr << "checking if the file is sorted\n";
 
         for (; index < file_size; index++)
         {
             char p = fsorted[index - line_p_len - 1];
             char c = fsorted[index];
 
+            bool newline_was_found = false;
             if (c == '\n')
             {
                 if (p != '\n')
@@ -151,7 +193,7 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    newline_found(line_p, line_c, line_p_len, index, line_cnt);
+                    newline_was_found = true;
                 }
             }
             else
@@ -160,7 +202,7 @@ int main(int argc, char *argv[])
                 {
                     // reached end of previous line, scan for \n
                     scan_for_newline(index, file_size, fsorted);
-                    newline_found(line_p, line_c, line_p_len, index, line_cnt);
+                    newline_was_found = true;
                 }
                 else
                 {
@@ -179,17 +221,60 @@ int main(int argc, char *argv[])
                         {
                             // line success, scan for newline
                             scan_for_newline(index, file_size, fsorted);
-                            newline_found(line_p, line_c, line_p_len, index, line_cnt);
+                            newline_was_found = true;
                         }
                     }
                     else if (p < c)
                     {
                         // line success, scan for newline
                         scan_for_newline(index, file_size, fsorted);
-                        newline_found(line_p, line_c, line_p_len, index, line_cnt);
+                        newline_was_found = true;
                     }
                 }
             }
+
+            if (newline_was_found)
+            {
+                line_p = line_c;
+                line_p_len = index - line_p;
+                line_c = index + 1;
+                line_cnt++;
+
+                progress(index, file_size);
+            }
+        }
+
+        progress(1, 1);
+
+        std::cerr << "doing spot checks\n";
+
+        std::uint64_t u_line_p_len = 0;
+        std::uint64_t u_line_p = 0;
+        std::uint64_t u_line_cnt = 0;
+        std::uint64_t u_line_c = 0;
+        for (index = 0; index < file_size; index++)
+        {
+            char c = funsorted[index];
+
+            if (c == '\n')
+            {
+                u_line_p = u_line_c;
+                u_line_p_len = index - u_line_p;
+                u_line_c = index + 1;
+                u_line_cnt++;
+
+                progress(index, file_size);
+            }
+        }
+
+        progress(1, 1);
+
+        if (u_line_cnt != line_cnt)
+        {
+            std::cerr << "\n\nSPOT CHECK FAIL!\nthe sorted file contained a different number of lines!\n\n"
+                << "number of lines in unsorted file: " << u_line_cnt << "\n"
+                << "number of lines in   sorted file: " << line_cnt << "\n\n";
+            return 1;
         }
 
         std::cerr << "\n\nSORTED\n\n";

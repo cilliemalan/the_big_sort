@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
                         l1.assign(pl1, cl1);
                         std::cerr << l0 << "\n"
                                   << l1 << "\n\n"
-                                  << "exiting.\n";
+                                  << "NOT SORTED\n";
                         return 1;
                     }
                 }
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        std::cerr << "\n\nThe file is sorted!\n\n";
+        std::cerr << "\n\nSORTED\n\n";
     }
     catch (std::exception &e)
     {

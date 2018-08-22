@@ -4,13 +4,12 @@
     This utility generates random stuff.
 */
 
-
 #include "common.hpp"
 #include "blockingconcurrentqueue.h"
 
 using namespace std;
 
-// the amount of memory for the buffer used to generate 
+// the amount of memory for the buffer used to generate
 // random sequences. Will have num processors * 2 - 2
 // of these hanging around
 static const uint64_t memory_buffer_size = 32ull * 1024 * 1024;
@@ -88,7 +87,6 @@ static void capitalize(char *c)
         *c -= 32;
 }
 
-
 // random number generating stuff.
 static mt19937 rnd_seeder;
 // the buffer of random numbers.
@@ -98,7 +96,7 @@ static thread_local int rnd_cnt = 0;
 static thread_local int rnd_mod = 0;
 static int rnd(int max)
 {
-    if(--rnd_cnt <= 0)
+    if (--rnd_cnt <= 0)
     {
         // reseed
         rnd_ri = rnd_seeder();
@@ -107,7 +105,8 @@ static int rnd(int max)
     }
 
     int r = ((randoms[++rnd_ri % randoms.size()] ^ rnd_mod) % (max));
-    if (r < 0) r = -r;
+    if (r < 0)
+        r = -r;
     return r;
 }
 
@@ -123,7 +122,7 @@ static vector<char> generate_buffer(int size)
         auto space_left = buffer.size() - buffer_size;
         if (space_left < static_cast<size_t>(word.length + 2))
         {
-            buffer[buffer_size++] = '\n';
+            buffer[buffer_size - 1] = '\n';
             break;
         }
 
@@ -137,7 +136,7 @@ static vector<char> generate_buffer(int size)
 
         if (--next_endl <= 0)
         {
-            buffer[buffer_size++] = '\n';
+            buffer[buffer_size - 1] = '\n';
             next_endl = rnd(max_line_length);
         }
     }
@@ -202,8 +201,9 @@ int main(int argc, char *argv[])
 
     // using almost all the threads to generate random sequences.
     int numThreads = thread::hardware_concurrency() - 2;
-    if (numThreads <= 0) numThreads = 1;
-    
+    if (numThreads <= 0)
+        numThreads = 1;
+
     // borrowing moodycamel's cross platform semaphore.
     // we can generate max numThreads * 2 buffers before we have to wait
     // for them to be written to disk
@@ -245,11 +245,11 @@ int main(int argc, char *argv[])
         queue.wait_dequeue(buffer);
 
         // interim progress
-        write_progress((buffers_written*2) + 1, buffers_to_write * 2);
-        
+        write_progress((buffers_written * 2) + 1, buffers_to_write * 2);
+
         // write
         fwrite(&buffer[0], 1, buffer.size(), stdout);
-        fflush (stdout);
+        fflush(stdout);
 
         buffers_written++;
         write_progress(buffers_written, buffers_to_write);
@@ -262,6 +262,6 @@ int main(int argc, char *argv[])
 
     cerr << "\nwrote " << total_bytes_written << " bytes.\n";
 
-    fclose (stdout);
+    fclose(stdout);
     return 0;
 }

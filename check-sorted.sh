@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOCALE=C /usr/bin/sort -c -f --stable $1
+LC_ALL=C /usr/bin/sort -c -f --stable $1
 
 if [ "$?" -eq "0" ]
 then

@@ -1,7 +1,6 @@
 
 EXECUTABLES=generate check-sorted
-SRCS=words.cpp mappedfile.cpp
-ALL_SRCS=$(SRCS) $(addsuffix .cpp,$(EXECUTABLES))
+SRCS=words.cpp mappedfile.cpp $(addsuffix .cpp,$(EXECUTABLES))
 PCH=common.hpp
 
 CXX?=g++
@@ -23,11 +22,11 @@ check-sorted: $(PCH).gch mappedfile.o check-sorted.o
 install: all
 	cp $(EXECUTABLES) /usr/bin/
 
-.depend: $(ALL_SRCS)
+.depend: $(SRCS)
 	$(CXX) $(CPPFLAGS) -MM $^>./.depend;
 
 clean:
-	rm -f $(ALL_OBJS) $(PCH).gch $(EXECUTABLES) .depend
+	rm -f $(OBJS) $(PCH).gch $(EXECUTABLES) .depend
 
 $(PCH).gch: $(PCH)
 	$(CXX) -x c++-header $(CPPFLAGS) $(PCH) -o $(PCH).gch

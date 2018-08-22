@@ -57,17 +57,6 @@ checks if a file is sorted.
 The program will print status to stderr and return 0 if the file is sorted.
 
 
-UTILITY: purger
-
-purges all freeable memory.
-
-    Usage: purger
-
-Used to make sure the OS hasn't cached a file in memory, giving
-unpredictable results for a sort. This program crashes on Linux. Too bad.
-
-
-
 ==EXAMPLE==
 
 In the directory example you'll find an example docker image. It uses sort(1) to sort the

@@ -1,5 +1,5 @@
 
-EXECUTABLES=generate check-sorted purger
+EXECUTABLES=generate check-sorted
 SRCS=words.cpp mappedfile.cpp
 ALL_SRCS=$(SRCS) $(addsuffix .cpp,$(EXECUTABLES))
 PCH=common.hpp
@@ -11,16 +11,13 @@ OBJS=$(subst .cpp,.o,$(SRCS))
 
 
 
-all: generate check-sorted purger
+all: generate check-sorted
 
 generate: $(PCH).gch words.o generate.o
 	$(CXX) $(LDFLAGS) -o $@ words.o $@.o
 
 check-sorted: $(PCH).gch mappedfile.o check-sorted.o
 	$(CXX) $(LDFLAGS) -o $@ mappedfile.o $@.o
-
-purger: $(PCH).gch purger.o
-	$(CXX) $(LDFLAGS) -o $@ $@.o
 
 
 install: all

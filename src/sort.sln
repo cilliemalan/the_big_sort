@@ -7,8 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "check-sorted", "check-sorte
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "generate", "generate.vcxproj", "{698F208A-B92A-4A4E-988D-63A4393C57F4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "purger", "purger.vcxproj", "{9BCDC0DD-1E5C-40F2-8669-7384260C147E}"
-EndProject
 Global
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true
@@ -26,10 +24,6 @@ Global
 		{698F208A-B92A-4A4E-988D-63A4393C57F4}.Debug|x64.Build.0 = Debug|x64
 		{698F208A-B92A-4A4E-988D-63A4393C57F4}.Release|x64.ActiveCfg = Release|x64
 		{698F208A-B92A-4A4E-988D-63A4393C57F4}.Release|x64.Build.0 = Release|x64
-		{9BCDC0DD-1E5C-40F2-8669-7384260C147E}.Debug|x64.ActiveCfg = Debug|x64
-		{9BCDC0DD-1E5C-40F2-8669-7384260C147E}.Debug|x64.Build.0 = Debug|x64
-		{9BCDC0DD-1E5C-40F2-8669-7384260C147E}.Release|x64.ActiveCfg = Release|x64
-		{9BCDC0DD-1E5C-40F2-8669-7384260C147E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

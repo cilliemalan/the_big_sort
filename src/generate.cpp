@@ -8,10 +8,12 @@
 #include "common.hpp"
 #include "blockingconcurrentqueue.h"
 
+using namespace std;
+
 // the amount of memory for the buffer used to generate 
 // random sequences. Will have num processors * 2 - 2
 // of these hanging around
-static const std::uint64_t memory_buffer_size = 32ull * 1024 * 1024;
+static const uint64_t memory_buffer_size = 32ull * 1024 * 1024;
 
 // the number of random numbers to generate
 static const int random_number_count = 8 * 1024 * 1024;
@@ -23,7 +25,7 @@ static const int max_line_length = 30;
 static const int capitalization_coefficient = 10;
 
 // this string contains a bajillion different words
-extern std::string all_words_string;
+extern string all_words_string;
 
 // a helper class for a word which points to a a place in all_words_string.
 struct Word
@@ -31,7 +33,7 @@ struct Word
     Word(const char *pointer, int length) : pointer(pointer), length(length) {}
     inline void copy(char *buffer)
     {
-        std::memcpy(buffer, pointer, length);
+        memcpy(buffer, pointer, length);
     }
 
     const char *pointer;
@@ -39,9 +41,9 @@ struct Word
 };
 
 // turn all_words_string into pointers to the discrete words.
-static std::vector<Word> read_all_words()
+static vector<Word> read_all_words()
 {
-    std::vector<Word> result;
+    vector<Word> result;
     const char *last_ptr = &all_words_string[0];
     int last_size = 0;
     for (size_t i = 0; i < all_words_string.size(); i++)
@@ -63,10 +65,10 @@ static std::vector<Word> read_all_words()
 
 // generates a sequence of random numbers. A small amount of random
 // numbers (like 8 million) are generated and iterated through.
-static std::vector<int> generate_randoms()
+static vector<int> generate_randoms()
 {
-    std::mt19937 generator;
-    std::vector<int> randoms(random_number_count);
+    mt19937 generator;
+    vector<int> randoms(random_number_count);
     for (size_t i = 0; i < randoms.size(); i++)
     {
         randoms[i] = generator();
@@ -78,7 +80,7 @@ static std::vector<int> generate_randoms()
 }
 
 // the buffer containing all words.
-static const std::vector<Word> all_words;
+static const vector<Word> all_words;
 
 static void capitalize(char *c)
 {
@@ -88,9 +90,9 @@ static void capitalize(char *c)
 
 
 // random number generating stuff.
-static std::mt19937 rnd_seeder;
+static mt19937 rnd_seeder;
 // the buffer of random numbers.
-static const std::vector<int> randoms(generate_randoms());
+static const vector<int> randoms(generate_randoms());
 static thread_local int rnd_ri = 0;
 static thread_local int rnd_cnt = 0;
 static thread_local int rnd_mod = 0;
@@ -109,9 +111,9 @@ static int rnd(int max)
     return r;
 }
 
-static std::vector<char> generate_buffer(int size)
+static vector<char> generate_buffer(int size)
 {
-    std::vector<char> buffer(size);
+    vector<char> buffer(size);
     int buffer_size = 0;
     int next_endl = rnd(max_line_length);
     for (;;)
@@ -146,7 +148,7 @@ static std::vector<char> generate_buffer(int size)
 
 static void print_usage()
 {
-    std::cerr << R"(
+    cerr << R"(
 generates a file with random stuff.
 
     Usage: generate <amount in gigabytes>
@@ -162,7 +164,7 @@ The program will print to stdout so run it e.g. like this:
 void write_progress(int n, int total)
 {
     int progress = (100 * n) / total;
-    std::cerr << "\r" << progress << "%";
+    cerr << "\r" << progress << "%";
 }
 
 int main(int argc, char *argv[])
@@ -173,7 +175,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    int num_gigabytes = std::atoi(argv[1]);
+    int num_gigabytes = atoi(argv[1]);
     if (num_gigabytes < 1)
     {
         print_usage();
@@ -182,24 +184,24 @@ int main(int argc, char *argv[])
 
     if (num_gigabytes > 500)
     {
-        std::cerr << "The program has a hardcoded limit of 500 gigabytes. If you want more than that you're going to have to modify the source code.";
+        cerr << "The program has a hardcoded limit of 500 gigabytes. If you want more than that you're going to have to modify the source code.";
         return 3;
     }
 
     // on first call the randmo number generator will reseed.
     rnd(1);
 
-    *const_cast<std::vector<Word> *>(&all_words) = read_all_words();
+    *const_cast<vector<Word> *>(&all_words) = read_all_words();
     int buffers_to_write = static_cast<int>((1024ull * 1024 * 1024 * num_gigabytes) / memory_buffer_size);
     int buffers_written = 0;
-    std::atomic<int> buffers_generating;
-    std::atomic<int> total_buffers_generated;
+    atomic<int> buffers_generating;
+    atomic<int> total_buffers_generated;
     buffers_generating = 0;
     total_buffers_generated = 0;
-    std::uint64_t total_bytes_written = 0;
+    uint64_t total_bytes_written = 0;
 
     // using almost all the threads to generate random sequences.
-    int numThreads = std::thread::hardware_concurrency() - 2;
+    int numThreads = thread::hardware_concurrency() - 2;
     if (numThreads <= 0) numThreads = 1;
     
     // borrowing moodycamel's cross platform semaphore.
@@ -208,10 +210,10 @@ int main(int argc, char *argv[])
     moodycamel::details::mpmc_sema::Semaphore semaphore(numThreads * 2);
 
     // the queue of generated buffers to be written to disk
-    moodycamel::BlockingConcurrentQueue<std::vector<char>> queue;
+    moodycamel::BlockingConcurrentQueue<vector<char>> queue;
 
     // kick off the generating threads
-    std::vector<std::thread> threads;
+    vector<thread> threads;
     for (int i = 0; i < numThreads; i++)
     {
         threads.emplace_back([&]() {
@@ -219,7 +221,7 @@ int main(int argc, char *argv[])
             {
                 semaphore.wait();
                 auto buffer = generate_buffer(memory_buffer_size);
-                queue.enqueue(std::move(buffer));
+                queue.enqueue(move(buffer));
                 semaphore.signal();
             }
         });
@@ -227,7 +229,7 @@ int main(int argc, char *argv[])
 
     // don't know how to write binary to cout so using c-style write instead
     // set up output buffer
-    std::vector<char> line_buffer(256 * 1024 * 1024);
+    vector<char> line_buffer(256 * 1024 * 1024);
     setvbuf(stdout, &line_buffer[0], _IOFBF, line_buffer.size());
 
 #ifdef WIN32
@@ -239,7 +241,7 @@ int main(int argc, char *argv[])
     while (buffers_written < buffers_to_write)
     {
         // get the generated buffer
-        std::vector<char> buffer;
+        vector<char> buffer;
         queue.wait_dequeue(buffer);
 
         // interim progress
@@ -258,7 +260,7 @@ int main(int argc, char *argv[])
     for (auto &t : threads)
         t.join();
 
-    std::cerr << "\nwrote " << total_bytes_written << " bytes.\n";
+    cerr << "\nwrote " << total_bytes_written << " bytes.\n";
 
     fclose (stdout);
     return 0;

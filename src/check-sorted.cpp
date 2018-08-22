@@ -27,12 +27,13 @@ static inline bool is_uppercase(char c) { return c >= 65 && c <= 90; }
 
 static inline uint64_t line_length(const mapped_file &fsorted, uint64_t line_start)
 {
-    for (uint64_t len = line_start; len < fsorted.size(); len++)
+    auto size = fsorted.size();
+    for (uint64_t len = line_start; len < size; len++)
     {
-        if (fsorted[len] == '\n') return len;
+        if (fsorted[len] == '\n') return len - line_start;
     }
 
-    return fsorted.size() - line_start;
+    return size - line_start;
 }
 
 void print_unsorted_message(const mapped_file &fsorted, uint64_t line_p, uint64_t line_c, uint64_t line_cnt)
@@ -251,10 +252,10 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    if (p > c)
+                    char up = (is_uppercase(p) ? p + 32 : p);
+                    char uc = (is_uppercase(c) ? c + 32 : c);
+                    if (up > uc)
                     {
-                        char up = (is_uppercase(p) ? p + 32 : p);
-                        char uc = (is_uppercase(c) ? c + 32 : c);
 
                         if (up > uc)
                         {
@@ -269,7 +270,7 @@ int main(int argc, char *argv[])
                             newline_was_found = true;
                         }
                     }
-                    else if (p < c)
+                    else if (up < uc)
                     {
                         // line success, scan for newline
                         scan_for_newline(index, file_size, fsorted);

@@ -21,6 +21,8 @@ git clone https://github.com/cilliemalan/the_big_sort
 cd the_big_sort/src
 make
 make install
+cd ..
+cp *.sh /usr/bin/
 
 cd /
 rm -rf /tmp/build

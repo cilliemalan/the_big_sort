@@ -108,7 +108,7 @@ static uint64_t key_for(const mapped_file &fsorted, uint64_t line, uint64_t len)
     uint64_t key = 0;
     for (int i = 0; i < 8; i++)
     {
-        char c = i >= len ? 0 : fsorted[line + i];
+        char c = static_cast<uint32_t>(i) >= len ? 0 : fsorted[line + i];
         key <<= 8;
         key |= is_uppercase(c) ? c + 32 : c;
     }
@@ -140,10 +140,8 @@ static inline const void* strstr_s(const void *l, uint64_t l_len, const void *s,
     return nullptr;
 }
 
-static bool find_line(const char* start, const char* end, char* lookingfor, uint64_t lookingfor_len)
+static inline bool find_line(const char* start, const char* end, char* lookingfor, uint64_t lookingfor_len)
 {
-    uint64_t line_ix = 0;
-    uint64_t range = static_cast<uint64_t>(end - start);
     return strstr_s(start, static_cast<uint64_t>(end - start), lookingfor, lookingfor_len);
 }
 
@@ -169,9 +167,6 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-        uint64_t lines = 0;
-        uint64_t line_n0 = 0;
-        uint64_t line_n1 = 0;
         uint64_t file_size = fsorted.size();
         uint64_t index = 0;
         uint64_t line_p_len = 0;

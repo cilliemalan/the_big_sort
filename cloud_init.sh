@@ -1,5 +1,5 @@
 #!/bin/bash
-# This is the init script to mount and configure the nvme drives on an m5d.4xlarge server
+# This is the init script to mount and configure the nvme drives on an m5d.12xlarge server
 
 # make /tmp be a ram filesystem
 cat <<EOF >> /etc/fstab
@@ -40,7 +40,7 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${drive}
   p # primary partition
   1 # partition number 1
     # default - start at beginning of disk
-  +215G  # amount of space in the new partition
+  +535G  # amount of space in the new partition
   w # write the partition table
   q # quit just in case
 EOF

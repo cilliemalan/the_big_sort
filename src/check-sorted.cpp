@@ -7,13 +7,13 @@
 #include "common.hpp"
 #include "mappedfile.hpp"
 
-
-constexpr std::uint64_t index_page_size = 4096;
+using namespace std;
+constexpr uint64_t index_page_size = 4096;
 
 
 static void print_usage()
 {
-    std::cerr << R"(
+    cerr << R"(
 checks if a file is the sorted version of another.
 
     Usage: check-sorted <sorted file> <unsorted file>
@@ -25,9 +25,9 @@ The program will print status to stderr and return 0 if the file is sorted.
 
 static inline bool is_uppercase(char c) { return c >= 65 && c <= 90; }
 
-static inline std::uint64_t line_length(const mapped_file &fsorted, std::uint64_t line_start)
+static inline uint64_t line_length(const mapped_file &fsorted, uint64_t line_start)
 {
-    for (std::uint64_t len = line_start; len < fsorted.size(); len++)
+    for (uint64_t len = line_start; len < fsorted.size(); len++)
     {
         if (fsorted[len] == '\n') return len;
     }
@@ -35,15 +35,15 @@ static inline std::uint64_t line_length(const mapped_file &fsorted, std::uint64_
     return fsorted.size() - line_start;
 }
 
-void print_unsorted_message(const mapped_file &fsorted, std::uint64_t line_p, std::uint64_t line_c, std::uint64_t line_cnt)
+void print_unsorted_message(const mapped_file &fsorted, uint64_t line_p, uint64_t line_c, uint64_t line_cnt)
 {
-    std::cerr << "\n\nFound unsorted lines: lines #"
+    cerr << "\n\nFound unsorted lines: lines #"
         << line_cnt << " and #" << line_cnt + 1 << ":\n\n";
 
-    std::string l0, l1;
+    string l0, l1;
     l0.assign(&fsorted[line_p], line_length(fsorted, line_p));
     l1.assign(&fsorted[line_c], line_length(fsorted, line_c));
-    std::cerr << l0 << "\n"
+    cerr << l0 << "\n"
         << l1 << "\n\n"
         << "NOT SORTED\n";
 }
@@ -52,7 +52,7 @@ static inline void scan_for_newline(uint64_t &index, const uint64_t &file_size, 
 {
     for (;;)
     {
-        std::uint64_t _r = *reinterpret_cast<std::uint64_t*>(&fsorted[index]);
+        uint64_t _r = *reinterpret_cast<uint64_t*>(&fsorted[index]);
         _r ^= 0x0a0a0a0a0a0a0a0a;
 
         int stride = 0;
@@ -76,23 +76,23 @@ static inline void progress(uint64_t x, uint64_t total)
     if (last_progress != prog)
     {
         last_progress = prog;
-        std::cerr << "\r" << prog << "%" << std::flush;
+        cerr << "\r" << prog << "%" << flush;
 
         if (prog >= 100)
         {
-            std::cerr << "\n";
+            cerr << "\n";
         }
         else
         {
-            std::cerr << std::flush;
+            cerr << flush;
         }
     }
 }
 
-static std::vector<int> generate_randoms()
+static vector<int> generate_randoms()
 {
-    std::mt19937 generator;
-    std::vector<int> randoms(1000000);
+    mt19937 generator;
+    vector<int> randoms(1000000);
     for (size_t i = 0; i < randoms.size(); i++)
     {
         randoms[i] = generator();
@@ -164,27 +164,27 @@ int main(int argc, char *argv[])
         // the files have to be  the same length
         if (fsorted.size() != funsorted.size())
         {
-            std::cerr << "The sorted and unsorted files are not equal in size\n" << "\n\n"
+            cerr << "The sorted and unsorted files are not equal in size\n" << "\n\n"
                 << "NOT SORTED\n";
             return 1;
         }
 
-        std::uint64_t lines = 0;
-        std::uint64_t line_n0 = 0;
-        std::uint64_t line_n1 = 0;
-        std::uint64_t file_size = fsorted.size();
-        std::uint64_t index = 0;
-        std::uint64_t line_p_len = 0;
-        std::uint64_t line_p = 0;
-        std::uint64_t line_c = 0;
-        std::uint64_t line_cnt = 0;
-        std::vector<int> randoms(generate_randoms());
-        std::uint64_t rix = 0;
+        uint64_t lines = 0;
+        uint64_t line_n0 = 0;
+        uint64_t line_n1 = 0;
+        uint64_t file_size = fsorted.size();
+        uint64_t index = 0;
+        uint64_t line_p_len = 0;
+        uint64_t line_p = 0;
+        uint64_t line_c = 0;
+        uint64_t line_cnt = 0;
+        vector<int> randoms(generate_randoms());
+        uint64_t rix = 0;
 
         // we'll index the sorted file as we go along
-        std::uint64_t prev_key = 0;
-        std::uint64_t prev_key_ix = 0;
-        std::map<std::uint64_t, char*> sorted_index;
+        uint64_t prev_key = 0;
+        uint64_t prev_key_ix = 0;
+        map<uint64_t, char*> sorted_index;
         sorted_index[0] = &fsorted[0];
 
         // skip blank lines at start of file
@@ -218,11 +218,11 @@ int main(int argc, char *argv[])
         // no newline found
         if (index >= file_size)
         {
-            std::cerr << "\n\nONLY ONE LINE\n\n";
+            cerr << "\n\nONLY ONE LINE\n\n";
             return 0;
         }
 
-        std::cerr << "checking if the file is sorted\n";
+        cerr << "checking if the file is sorted\n";
 
         for (; index < file_size; index++)
         {
@@ -304,13 +304,13 @@ int main(int argc, char *argv[])
 
         progress(1, 1);
 
-        std::cerr << "doing spot checks\n";
+        cerr << "doing spot checks\n";
 
-        std::uint64_t u_line_p_len = 0;
-        std::uint64_t u_line_p = 0;
-        std::uint64_t u_line_cnt = 0;
-        std::uint64_t u_line_c = 0;
-        std::uint64_t num_checks = 0;
+        uint64_t u_line_p_len = 0;
+        uint64_t u_line_p = 0;
+        uint64_t u_line_cnt = 0;
+        uint64_t u_line_c = 0;
+        uint64_t num_checks = 0;
         for (index = 0; index < file_size; index++)
         {
             char c = funsorted[index];
@@ -339,9 +339,9 @@ int main(int argc, char *argv[])
 
                     if (!found)
                     {
-                        std::string line;
+                        string line;
                         line.assign(&funsorted[u_line_p], u_line_p_len);
-                        std::cerr << "\n\nSPOT CHECK FAIL!\ncould not find a line in the sorted file:\n\n"
+                        cerr << "\n\nSPOT CHECK FAIL!\ncould not find a line in the sorted file:\n\n"
                             << line << "\n";
                         return 1;
                     }
@@ -351,21 +351,21 @@ int main(int argc, char *argv[])
         }
 
         progress(1, 1);
-        std::cerr << "did " << num_checks << " successful spot checks\n";
+        cerr << "did " << num_checks << " successful spot checks\n";
 
         if (u_line_cnt != line_cnt)
         {
-            std::cerr << "\n\nLINE COUNT FAIL!\nthe sorted file contained a different number of lines!\n\n"
+            cerr << "\n\nLINE COUNT FAIL!\nthe sorted file contained a different number of lines!\n\n"
                 << "number of lines in unsorted file: " << u_line_cnt << "\n"
                 << "number of lines in   sorted file: " << line_cnt << "\n\n";
             return 1;
         }
 
-        std::cerr << "\n\nSORTED\n\n";
+        cerr << "\n\nSORTED\n\n";
     }
-    catch (std::exception &e)
+    catch (exception &e)
     {
-        std::cerr << e.what() << "\n";
+        cerr << e.what() << "\n";
         return -1;
     }
 

@@ -13,13 +13,13 @@ OBJS=$(subst .cpp,.o,$(SRCS))
 
 all: generate check-sorted purger
 
-generate: $(PCH).gch words.o
+generate: $(PCH).gch words.o generate.o
 	$(CXX) $(LDFLAGS) -o $@ words.o $@.o
 
-check-sorted: $(PCH).gch mappedfile.o
+check-sorted: $(PCH).gch mappedfile.o check-sorted.o
 	$(CXX) $(LDFLAGS) -o $@ mappedfile.o $@.o
 
-purger: $(PCH).gch
+purger: $(PCH).gch purger.o
 	$(CXX) $(LDFLAGS) -o $@ $@.o
 
 

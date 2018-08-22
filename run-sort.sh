@@ -8,7 +8,9 @@
 
 IMAGE=$1
 GIGABYTES=$2
+MEMORYLIMIT=${MEMORYLIMIT:-50g}
 
+if [[ "$GIGABYTES" -gt "150" ]]; then MEMORYLIMIT="150g"; fi
 if [[ "$IMAGE" = "" ]]; then echo "No image specified"; exit 0; fi
 if [[ "$GIGABYTES" = "" ]]; then echo "No gigabytes specified"; exit 0; fi
 
@@ -26,13 +28,13 @@ echo "Generating $GIGABYTES GB file"
 generate $GIGABYTES > /src/file.dat
 
 # purge
-purger
+sync && echo 3 > /proc/sys/vm/drop_caches
 
 # the command that will be run
 torun="docker run
     --network none
     --rm -it
-    -m 50g
+    -m $MEMORYLIMIT
     -v /src:/src:ro
     -v /dst:/dst
     $IMAGE
@@ -51,7 +53,7 @@ echo
 if [[ "$?" -eq "0" ]]
 then
     echo "CHECKING IF THE FILE IS SORTED"
-    check-sorted /dst/file.dat
+    check-sorted /dst/file.dat /src/file.dat
 
     if [[ "$?" -eq "0" ]]
     then

@@ -7,6 +7,10 @@
 #include "common.hpp"
 #include "mappedfile.hpp"
 
+
+constexpr std::uint64_t index_page_size = 4096;
+
+
 static void print_usage()
 {
     std::cerr << R"(
@@ -17,13 +21,6 @@ checks if a file is the sorted version of another.
 The program will print status to stderr and return 0 if the file is sorted.
 
 )";
-}
-
-std::string make_string(const char *pl0, int cl0)
-{
-    std::string s;
-    s.assign(pl0, cl0);
-    return s;
 }
 
 static inline bool is_uppercase(char c) { return c >= 65 && c <= 90; }
@@ -106,6 +103,50 @@ static std::vector<int> generate_randoms()
     return randoms;
 }
 
+static uint64_t key_for(const mapped_file &fsorted, uint64_t line, uint64_t len)
+{
+    uint64_t key = 0;
+    for (int i = 0; i < 8; i++)
+    {
+        char c = i >= len ? 0 : fsorted[line + i];
+        key <<= 8;
+        key |= is_uppercase(c) ? c + 32 : c;
+    }
+
+    return key;
+}
+
+static inline const void* strstr_s(const void *l, uint64_t l_len, const void *s, uint64_t s_len)
+{
+    char *cur, *last;
+    const char *cl = (const char *)l;
+    const char *cs = (const char *)s;
+
+    if (l_len == 0 || s_len == 0) return nullptr;
+
+    if (l_len < s_len) return nullptr;
+    if (s_len == 1) return memchr(l, (int)*cs, l_len);
+
+    last = (char *)cl + l_len - s_len;
+
+    for (cur = (char *)cl; cur <= last; cur++)
+    {
+        if (cur[0] == cs[0] && memcmp(cur, cs, s_len) == 0)
+        {
+            return cur;
+        }
+    }
+
+    return nullptr;
+}
+
+static bool find_line(const char* start, const char* end, char* lookingfor, uint64_t lookingfor_len)
+{
+    uint64_t line_ix = 0;
+    uint64_t range = static_cast<uint64_t>(end - start);
+    return strstr_s(start, static_cast<uint64_t>(end - start), lookingfor, lookingfor_len);
+}
+
 int main(int argc, char *argv[])
 {
     if (argc < 3)
@@ -139,6 +180,12 @@ int main(int argc, char *argv[])
         std::uint64_t line_cnt = 0;
         std::vector<int> randoms(generate_randoms());
         std::uint64_t rix = 0;
+
+        // we'll index the sorted file as we go along
+        std::uint64_t prev_key = 0;
+        std::uint64_t prev_key_ix = 0;
+        std::map<std::uint64_t, char*> sorted_index;
+        sorted_index[0] = &fsorted[0];
 
         // skip blank lines at start of file
         for (; index < file_size; index++)
@@ -240,7 +287,18 @@ int main(int argc, char *argv[])
                 line_c = index + 1;
                 line_cnt++;
 
-                progress(index, file_size);
+                if (line_cnt % 10 == 0) progress(index, file_size);
+
+                auto key = key_for(fsorted, line_p, line_p_len);
+                if (key != prev_key && prev_key - key > 0xffffffff)
+                {
+                    if (index - prev_key_ix > index_page_size)
+                    {
+                        sorted_index[key] = &fsorted[line_p];
+                        prev_key_ix = index;
+                    }
+                }
+                prev_key = key;
             }
         }
 
@@ -252,6 +310,7 @@ int main(int argc, char *argv[])
         std::uint64_t u_line_p = 0;
         std::uint64_t u_line_cnt = 0;
         std::uint64_t u_line_c = 0;
+        std::uint64_t num_checks = 0;
         for (index = 0; index < file_size; index++)
         {
             char c = funsorted[index];
@@ -263,15 +322,40 @@ int main(int argc, char *argv[])
                 u_line_c = index + 1;
                 u_line_cnt++;
 
-                progress(index, file_size);
+                if (u_line_cnt % 10 == 0) progress(index, file_size);
+
+                if (u_line_p_len && randoms[rix++%randoms.size()] < 2000000)
+                {
+                    auto key = key_for(funsorted, u_line_p, u_line_p_len);
+                    auto search_end = sorted_index.lower_bound(key);
+                    auto search_start = search_end;
+                    search_start--;
+                    if (search_end != sorted_index.end() && key == search_end->first) search_end++;
+                    auto ptr_start = search_start->second;
+                    auto ptr_end = search_end != sorted_index.end()
+                        ? search_end->second
+                        : &fsorted[file_size];
+                    auto found = find_line(ptr_start, ptr_end, &funsorted[u_line_p], u_line_p_len);
+
+                    if (!found)
+                    {
+                        std::string line;
+                        line.assign(&funsorted[u_line_p], u_line_p_len);
+                        std::cerr << "\n\nSPOT CHECK FAIL!\ncould not find a line in the sorted file:\n\n"
+                            << line << "\n";
+                        return 1;
+                    }
+                    num_checks++;
+                }
             }
         }
 
         progress(1, 1);
+        std::cerr << "did " << num_checks << " successful spot checks\n";
 
         if (u_line_cnt != line_cnt)
         {
-            std::cerr << "\n\nSPOT CHECK FAIL!\nthe sorted file contained a different number of lines!\n\n"
+            std::cerr << "\n\nLINE COUNT FAIL!\nthe sorted file contained a different number of lines!\n\n"
                 << "number of lines in unsorted file: " << u_line_cnt << "\n"
                 << "number of lines in   sorted file: " << line_cnt << "\n\n";
             return 1;

@@ -6,17 +6,23 @@ mapped_file::mapped_file(std::string filename, bool readonly)
 #if defined(__unix__)
 
     // open file
-    file_handle = ::open(filename.c_str(),
+    file_handle = open(filename.c_str(),
         readonly ? O_RDONLY : O_RDWR);
 
-    if (!file_handle || file_handle == INVALID_HANDLE_VALUE)
+    if (file_handle == -1)
     {
         throw std::runtime_error("could not open file");
     }
 
-    fseek(file_handle, 0L, SEEK_END);
-    filesize = ftell(file_handle);
-    rewind(file_handle);
+    // get file size
+    struct stat filestats;
+    auto statresult = fstat(file_handle, &filestats);
+    if(statresult != 0)
+    {
+        close(file_handle);
+        throw std::runtime_error("could not stat file");
+    }
+    filesize = filestats.st_size;
 
     // memory map
     pointer = static_cast<char*>(mmap(
@@ -86,7 +92,7 @@ mapped_file::mapped_file(std::string filename, bool readonly)
 mapped_file::~mapped_file()
 {
 #if defined(__unix__)
-    if(filesize && pointer) munmap(filesize);
+    if(filesize && pointer) munmap(pointer, filesize);
     if(file_handle) close(file_handle);
 #elif defined(WIN32)
     if(mapping_handle && mapping_handle != INVALID_HANDLE_VALUE)

@@ -13,7 +13,7 @@ class mapped_file
     char *pointer;
     std::uint64_t filesize;
 #if defined(__unix__)
-    FILE fd;
+    int file_handle;
 #elif defined(WIN32)
     HANDLE mapping_handle, file_handle;
 #else

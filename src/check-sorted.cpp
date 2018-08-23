@@ -23,7 +23,7 @@ The program will print status to stderr and return 0 if the file is sorted.
 )";
 }
 
-static inline bool is_uppercase(char c) { return c >= 65 && c <= 90; }
+static constexpr bool is_uppercase(char c) { return c >= 65 && c <= 90; }
 
 static inline uint64_t line_length(const mapped_file &fsorted, uint64_t line_start)
 {

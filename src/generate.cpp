@@ -219,14 +219,14 @@ int main(int argc, char *argv[])
     for (int i = 0; i < numThreads; i++)
     {
         threads.emplace_back([&]() {
-            threads_active++;
             while (++total_buffers_generated <= buffers_to_write)
             {
+                threads_active++;
                 semaphore.wait();
                 auto buffer = generate_buffer(memory_buffer_size);
                 queue.enqueue(move(buffer));
+                threads_active--;
             }
-            threads_active--;
         });
     }
 
@@ -268,10 +268,12 @@ int main(int argc, char *argv[])
         this_thread::sleep_for(chrono::milliseconds(100));
     }
 
-    this_thread::sleep_for(chrono::milliseconds(100));
     for (auto &t : threads)
     {
-        if (t.joinable()) t.join();
+        if (t.joinable())
+        {
+            t.detach();
+        }
     }
 
     cerr << "\nwrote " << total_bytes_written << " bytes.\n";

@@ -28,6 +28,7 @@ echo "Generating $GIGABYTES GB file"
 generate $GIGABYTES > /src/file.dat
 
 # purge
+echo "Purging "
 sync && echo 3 > /proc/sys/vm/drop_caches
 
 # the command that will be run

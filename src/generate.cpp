@@ -195,8 +195,10 @@ int main(int argc, char *argv[])
     int buffers_written = 0;
     atomic<int> buffers_generating;
     atomic<int> total_buffers_generated;
+    atomic<int> threads_active;
     buffers_generating = 0;
     total_buffers_generated = 0;
+    threads_active = 0;
     uint64_t total_bytes_written = 0;
 
     // using almost all the threads to generate random sequences.
@@ -217,13 +219,14 @@ int main(int argc, char *argv[])
     for (int i = 0; i < numThreads; i++)
     {
         threads.emplace_back([&]() {
+            threads_active++;
             while (++total_buffers_generated <= buffers_to_write)
             {
                 semaphore.wait();
                 auto buffer = generate_buffer(memory_buffer_size);
                 queue.enqueue(move(buffer));
-                semaphore.signal();
             }
+            threads_active--;
         });
     }
 
@@ -240,25 +243,36 @@ int main(int argc, char *argv[])
 
     while (buffers_written < buffers_to_write)
     {
-        // get the generated buffer
-        vector<char> buffer;
-        queue.wait_dequeue(buffer);
+        {
+            // get the generated buffer
+            vector<char> buffer;
+            queue.wait_dequeue(buffer);
 
-        // interim progress
-        write_progress((buffers_written * 2) + 1, buffers_to_write * 2);
+            // interim progress
+            write_progress((buffers_written * 2) + 1, buffers_to_write * 2);
 
-        // write
-        fwrite(&buffer[0], 1, buffer.size(), stdout);
-        fflush(stdout);
+            // write
+            fwrite(&buffer[0], 1, buffer.size(), stdout);
+            fflush(stdout);
 
-        buffers_written++;
-        write_progress(buffers_written, buffers_to_write);
-        total_bytes_written += buffer.size();
-        continue;
+            buffers_written++;
+            write_progress(buffers_written, buffers_to_write);
+            total_bytes_written += buffer.size();
+        }
+        semaphore.signal();
     }
 
+    while (threads_active > 0)
+    {
+        semaphore.signal();
+        this_thread::sleep_for(chrono::milliseconds(100));
+    }
+
+    this_thread::sleep_for(chrono::milliseconds(100));
     for (auto &t : threads)
-        t.join();
+    {
+        if (t.joinable()) t.join();
+    }
 
     cerr << "\nwrote " << total_bytes_written << " bytes.\n";
 

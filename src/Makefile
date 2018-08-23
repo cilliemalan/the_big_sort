@@ -5,7 +5,7 @@ PCH=common.hpp
 
 CXX?=g++
 CPPFLAGS=-g -O3 -std=c++17 -Wall -pthread
-LDFLAGS=-g -O3 -static -std=c++17 -Wall -lpthread -pthread
+LDFLAGS=-g -std=c++17 -Wall -lpthread -pthread
 OBJS=$(subst .cpp,.o,$(SRCS))
 
 

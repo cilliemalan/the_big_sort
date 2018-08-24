@@ -10,10 +10,13 @@ OBJS=$(subst .cpp,.o,$(SRCS))
 
 
 
-all: generate check-sorted
+all: generate check-sorted sorter
 
 generate: $(PCH).gch words.o generate.o
 	$(CXX) $(LDFLAGS) -o $@ words.o $@.o
+
+sorter: $(PCH).gch mappedfile.o sorter.o
+	$(CXX) $(LDFLAGS) -o $@ mappedfile.o $@.o
 
 check-sorted: $(PCH).gch mappedfile.o check-sorted.o
 	$(CXX) $(LDFLAGS) -o $@ mappedfile.o $@.o

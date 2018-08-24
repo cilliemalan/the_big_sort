@@ -13,3 +13,4 @@ Release/
 *.txt
 *.psess
 *.user
+int/

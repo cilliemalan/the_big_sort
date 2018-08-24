@@ -9,8 +9,8 @@
 
 using namespace std;
 
-typedef __int128 key_t;
-typedef pair<key_t, uint64_t> keypair_t;
+typedef __int128 skey_t;
+typedef pair<skey_t, uint64_t> keypair_t;
 typedef vector<keypair_t> keys_t;
 
 
@@ -26,10 +26,10 @@ Sorts a file
 
 
 static inline constexpr bool is_uppercase(char c) { return c >= 65 && c <= 90; }
-static inline key_t key_for(const mapped_file &fsorted, uint64_t line, uint64_t len)
+static inline skey_t key_for(const mapped_file &fsorted, uint64_t line, uint64_t len)
 {
-    key_t key = 0;
-    for (char i = 0; i < static_cast<char>(sizeof(key_t)); i++)
+    skey_t key = 0;
+    for (char i = 0; i < static_cast<char>(sizeof(skey_t)); i++)
     {
         char c = static_cast<uint32_t>(i) >= len ? 0 : fsorted[line + i];
         if (c == '\n') return key;

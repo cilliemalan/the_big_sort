@@ -37,11 +37,11 @@ make
 sudo make install
 ```
 
-### UTILITY: `generate`
+### Utility: `generate`
 
 Generates a file with random stuff.
 
-    Usage: `generate <amount in gigabytes>`
+Usage: `generate <amount in gigabytes>`
 
 The program will print to stdout so run it e.g. like this:
 ```sh
@@ -49,11 +49,11 @@ The program will print to stdout so run it e.g. like this:
 generate 3 > /tmp/wut.dat
 ```
 
-### UTILITY: `check-sorted`
+### Utility: `check-sorted`
 
 checks if a file is sorted.
 
-    Usage: `check-sorted <sorted file>`
+Usage: `check-sorted <sorted file>`
 
 The program will print status to stderr and return 0 if the file is sorted.
 
@@ -64,13 +64,13 @@ In the directory example you'll find an example docker image. It uses sort(1) to
 file. You can use it as an example of how your dockerfile should be built. Your dockerfile
 will be run much like this example when it is benchmarked.
 
-How to build:
+### How to build
 Execute this in the example directory:
 ```sh
 docker build -t sortexample .
 ```
 
-How to run:
+### How to run
 For example, to sort 1 gb, run this:
 ```sh
 mkdir -p /tmp/src /tmp/dst

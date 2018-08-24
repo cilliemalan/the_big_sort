@@ -7,10 +7,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "check-sorted", "check-sorte
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "generate", "generate.vcxproj", "{698F208A-B92A-4A4E-988D-63A4393C57F4}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sorter", "sorter.vcxproj", "{698F208A-B92A-4A4E-988D-63A4393C57F5}"
+EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Release|x64 = Release|x64
@@ -24,11 +23,18 @@ Global
 		{698F208A-B92A-4A4E-988D-63A4393C57F4}.Debug|x64.Build.0 = Debug|x64
 		{698F208A-B92A-4A4E-988D-63A4393C57F4}.Release|x64.ActiveCfg = Release|x64
 		{698F208A-B92A-4A4E-988D-63A4393C57F4}.Release|x64.Build.0 = Release|x64
+		{698F208A-B92A-4A4E-988D-63A4393C57F5}.Debug|x64.ActiveCfg = Debug|x64
+		{698F208A-B92A-4A4E-988D-63A4393C57F5}.Debug|x64.Build.0 = Debug|x64
+		{698F208A-B92A-4A4E-988D-63A4393C57F5}.Release|x64.ActiveCfg = Release|x64
+		{698F208A-B92A-4A4E-988D-63A4393C57F5}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52DC8E82-5B6F-43E8-AD79-EE956C07A07D}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

@@ -13,6 +13,7 @@
 #include <thread>
 #include <mutex>
 #include <map>
+#include <unordered_map>
 
 
 #if defined(unix) || defined(__unix__) || defined(__unix)

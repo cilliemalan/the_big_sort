@@ -9,7 +9,10 @@
 
 using namespace std;
 
-typedef vector<pair<uint64_t, uint64_t>> keys_t;
+typedef __int128 key_t;
+typedef pair<key_t, uint64_t> keypair_t;
+typedef vector<keypair_t> keys_t;
+
 
 static void print_usage()
 {
@@ -21,11 +24,12 @@ Sorts a file
 )";
 }
 
+
 static inline constexpr bool is_uppercase(char c) { return c >= 65 && c <= 90; }
-static inline uint64_t key_for(const mapped_file &fsorted, uint64_t line, uint64_t len)
+static inline key_t key_for(const mapped_file &fsorted, uint64_t line, uint64_t len)
 {
-    uint64_t key = 0;
-    for (int i = 0; i < 8; i++)
+    key_t key = 0;
+    for (char i = 0; i < static_cast<char>(sizeof(key_t)); i++)
     {
         char c = static_cast<uint32_t>(i) >= len ? 0 : fsorted[line + i];
         if (c == '\n') return key;
@@ -36,35 +40,42 @@ static inline uint64_t key_for(const mapped_file &fsorted, uint64_t line, uint64
     return key;
 }
 
-static uint64_t partition_k(keys_t &A, int64_t lo, int64_t hi)
+static string extract(mapped_file &f, uint64_t a)
 {
-    auto pivot = A[hi].first;
-    auto i = lo;
-    for (auto j = lo; j < hi; j++)
+    auto i = a;
+    for (;;)
     {
-        if (A[j].first < pivot) {
-            if (i != j) swap(A[i], A[j]);
-            i++;
-        }
+        if (i >= f.size()) break;
+        auto c = f[i];
+        if (c == '\n') break;
+        i++;
     }
-    swap(A[i], A[hi]);
-    return i;
+
+    string s;
+    if (i > 0)s.assign(&f[a], i - a + 1);
+    return s;
 }
 
-static void quicksort_k(keys_t &A, int64_t lo, int64_t hi)
-{
-    if (lo < hi)
-    {
-        auto p = partition_k(A, lo, hi);
-        quicksort_k(A, lo, p - 1);
-        quicksort_k(A, p + 1, hi);
-    }
-}
-
+static unordered_map<uint64_t, string> stringcache;
+static size_t misses = 0;
 static inline int compare_v(mapped_file &f, uint64_t a, uint64_t b)
 {
-    char* pa = &f[a];
-    char* pb = &f[b];
+    auto cached_a = stringcache.find(a);
+    auto cached_b = stringcache.find(b);
+
+    if (cached_a == stringcache.end())
+    {
+        cached_a = stringcache.emplace(a, extract(f, a)).first;
+        misses++;
+    }
+    if (cached_b == stringcache.end())
+    {
+        cached_b = stringcache.emplace(b, extract(f, b)).first;
+        misses++;
+    }
+
+    const char* pa = cached_a->second.data();
+    const char* pb = cached_b->second.data();
     size_t i = 0;
     for (;;)
     {
@@ -113,11 +124,6 @@ static void quicksort_v(mapped_file &f, keys_t &A, int64_t lo, int64_t hi)
         quicksort_v(f, A, lo, p - 1);
         quicksort_v(f, A, p + 1, hi);
     }
-}
-
-static inline void sort_k(keys_t &A)
-{
-    quicksort_k(A, 0, static_cast<int64_t>(A.size()) - 1);
 }
 
 static inline void sort_v(mapped_file &f, keys_t &A)
@@ -173,11 +179,9 @@ int main(int argc, char *argv[])
         cerr << "indexed " << num_lines << " lines\n";
         cerr << "sorting keys...\n";
         sort_v(funsorted, all_lines);
-        cerr << "done!\n";
+        cerr << "writing data...!\n";
 
         uint64_t ix = 0;
-        uint64_t prev_key = 0;
-        uint64_t prev_pos = 0;
         uint64_t dst_pos = 0;
 
         while (ix < num_lines)
@@ -186,6 +190,8 @@ int main(int argc, char *argv[])
             dst_pos += cpy(&funsorted[pos], &fsorted[dst_pos], file_size - pos);
             ix++;
         }
+        cerr << "done!\n";
+        cerr << misses << " misses\n";
     }
     catch (exception &e)
     {

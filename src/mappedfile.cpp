@@ -31,7 +31,7 @@ mapped_file::mapped_file(std::string filename, bool readonly, size_t size)
     {
         if (!readonly)
         {
-            if (truncate(file_handle, filesize))
+            if (ftruncate(file_handle, filesize))
             {
                 close(file_handle);
                 throw std::runtime_error("could not truncate file");

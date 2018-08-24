@@ -7,8 +7,8 @@ mapped_file::mapped_file(std::string filename, bool readonly, size_t size)
 #if defined(__unix__)
 
     // open file
-    file_handle = open(filename.c_str(),
-        readonly ? O_RDONLY : O_RDWR);
+    file_handle = readonly ? open(filename.c_str(), O_RDONLY)
+        : open(filename.c_str(), O_RDWR | O_CREAT, 0666);
 
     if (file_handle == -1)
     {

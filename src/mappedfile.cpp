@@ -1,7 +1,8 @@
 #include "common.hpp"
 #include "mappedfile.hpp"
 
-mapped_file::mapped_file(std::string filename, bool readonly)
+mapped_file::mapped_file(std::string filename, bool readonly, size_t size)
+    :filesize(size)
 {
 #if defined(__unix__)
 
@@ -14,15 +15,18 @@ mapped_file::mapped_file(std::string filename, bool readonly)
         throw std::runtime_error("could not open file");
     }
 
-    // get file size
-    struct stat filestats;
-    auto statresult = fstat(file_handle, &filestats);
-    if(statresult != 0)
+    if(filesize == 0)
     {
-        close(file_handle);
-        throw std::runtime_error("could not stat file");
+        // get file size
+        struct stat filestats;
+        auto statresult = fstat(file_handle, &filestats);
+        if(statresult != 0)
+        {
+            close(file_handle);
+            throw std::runtime_error("could not stat file");
+        }
+        filesize = filestats.st_size;
     }
-    filesize = filestats.st_size;
 
     // memory map
     pointer = static_cast<char*>(mmap(
@@ -53,10 +57,18 @@ mapped_file::mapped_file(std::string filename, bool readonly)
         throw std::runtime_error("could not open file");
     }
 
-    // get its size
     DWORD hi_size, lo_size;
-    lo_size = GetFileSize(file_handle, &hi_size);
-    filesize = static_cast<size_t>(lo_size) | (static_cast<size_t>(hi_size) << 32);
+    if (filesize == 0)
+    {
+        // get its size
+        lo_size = GetFileSize(file_handle, &hi_size);
+        filesize = static_cast<size_t>(lo_size) | (static_cast<size_t>(hi_size) << 32);
+    }
+    else
+    {
+        hi_size = static_cast<DWORD>(filesize >> 32);
+        lo_size = static_cast<DWORD>(filesize & 0xFFFFFFFF);
+    }
 
     // map it
     mapping_handle = CreateFileMapping(

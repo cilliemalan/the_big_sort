@@ -3,7 +3,7 @@
 class mapped_file
 {
   public:
-    mapped_file(std::string filename, bool readonly = true);
+    mapped_file(std::string filename, bool readonly = true, size_t size = 0);
     ~mapped_file();
 
     inline char &operator[](size_t pos) { return *(pointer + pos); }
